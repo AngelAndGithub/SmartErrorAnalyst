@@ -325,26 +325,26 @@ public class AIServiceImpl implements AIService {
 
             String url = zhipuBaseUrl + "/chat/completions";
             
-            // 处理base64图片URL格式 - 智谱AI要求纯base64,必须移除data URI前缀
+            // 处理base64图片URL格式 - 智谱AI要求带data URI前缀的完整格式
             String imageUrlValue = imageBase64;
             
             // 1. 清理base64数据中的换行符、空格、制表符
             imageUrlValue = imageUrlValue.replaceAll("\\s+", "");
             
-            // 2. 强制移除 data:image/xxx;base64, 前缀(智谱禁止带前缀)
-            if (imageUrlValue.startsWith("data:image/")) {
-                imageUrlValue = imageUrlValue.replaceAll("^data:image/\\w+;base64,", "");
-                log.info("已移除data URI前缀,使用纯base64格式");
+            // 2. 添加 data:image/png;base64, 前缀(智谱AI需要完整data URI格式)
+            if (!imageUrlValue.startsWith("data:image/")) {
+                imageUrlValue = "data:image/png;base64," + imageUrlValue;
+                log.info("已添加data URI前缀: {}", imageUrlValue.substring(0, 50));
             }
             
-            log.info("处理后纯Base64长度: {}, 前80字符: {}", 
+            log.info("最终Base64长度(含前缀): {}, 前80字符: {}", 
                 imageUrlValue.length(), 
                 imageUrlValue.length() > 80 ? imageUrlValue.substring(0, 80) : imageUrlValue);
             
             // 构建多模态请求体 - 使用LinkedHashMap保证字段顺序
             Map<String, Object> requestBodyMap = new LinkedHashMap<>();
             requestBodyMap.put("model", "glm-4v-flash"); // 使用智谱视觉模型
-            requestBodyMap.put("max_tokens", 2000);
+            requestBodyMap.put("max_tokens", 1000); // 注意：glm-4v-flash不支持2000，最大1000
             
             // 构建消息内容
             List<Map<String, Object>> messages = new ArrayList<>();
@@ -360,10 +360,12 @@ public class AIServiceImpl implements AIService {
             textContent.put("text", prompt != null ? prompt : "请识别图片中的文字内容，包括数学公式");
             contentList.add(textContent);
             
-            // 再添加图片 - 智谱AI视觉模型官方标准格式
+            // 再添加图片 - 智谱AI要求使用 type: "image_url" 和嵌套的 image_url 对象
             Map<String, Object> imageContent = new LinkedHashMap<>();
-            imageContent.put("type", "image"); // 关键:必须是image,不是image_url
-            imageContent.put("image", imageUrlValue); // 关键:直接赋值纯base64,无嵌套
+            imageContent.put("type", "image_url"); // 使用image_url
+            Map<String, String> imageUrlObj = new LinkedHashMap<>();
+            imageUrlObj.put("url", imageUrlValue); // data URI格式的base64（带前缀）
+            imageContent.put("image_url", imageUrlObj);
             contentList.add(imageContent);
             
             userMessage.put("content", contentList);

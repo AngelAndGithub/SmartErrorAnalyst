@@ -167,21 +167,43 @@
         </el-form-item>
         
         <el-form-item label="解析">
-          <el-input
-            v-model="form.analysis"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入题目解析（可选）"
-          />
+          <div class="analysis-input-wrapper">
+            <el-input
+              v-model="form.analysis"
+              type="textarea"
+              :rows="4"
+              placeholder="请输入题目解析（可选），支持LaTeX公式，如：$x^2 + y^2 = 1$"
+            />
+            <div v-if="form.analysis" class="formula-preview">
+              <div class="preview-header">
+                <span class="preview-title">公式预览</span>
+                <el-tag size="small" type="info">实时预览</el-tag>
+              </div>
+              <div class="preview-content">
+                <MathPreview :content="form.analysis" />
+              </div>
+            </div>
+          </div>
         </el-form-item>
         
         <el-form-item label="笔记">
-          <el-input
-            v-model="form.notes"
-            type="textarea"
-            :rows="2"
-            placeholder="请输入笔记（可选）"
-          />
+          <div class="analysis-input-wrapper">
+            <el-input
+              v-model="form.notes"
+              type="textarea"
+              :rows="2"
+              placeholder="请输入笔记（可选），支持LaTeX公式"
+            />
+            <div v-if="form.notes" class="formula-preview">
+              <div class="preview-header">
+                <span class="preview-title">笔记预览</span>
+                <el-tag size="small" type="info">实时预览</el-tag>
+              </div>
+              <div class="preview-content">
+                <MathPreview :content="form.notes" />
+              </div>
+            </div>
+          </div>
         </el-form-item>
         
         <el-form-item label="标签">
@@ -241,15 +263,21 @@
           />
           <div class="ai-section">
             <h4>题目解析</h4>
-            <p>{{ aiResult.analysis }}</p>
+            <div class="math-content">
+              <MathPreview :content="aiResult.analysis" />
+            </div>
           </div>
           <div class="ai-section" v-if="aiResult.knowledgePoint">
             <h4>相关知识点</h4>
-            <p>{{ aiResult.knowledgePoint }}</p>
+            <div class="math-content">
+              <MathPreview :content="aiResult.knowledgePoint" />
+            </div>
           </div>
           <div class="ai-section" v-if="aiResult.suggestions">
             <h4>学习建议</h4>
-            <p>{{ aiResult.suggestions }}</p>
+            <div class="math-content">
+              <MathPreview :content="aiResult.suggestions" />
+            </div>
           </div>
         </div>
         <div v-else class="ai-placeholder">
@@ -307,6 +335,7 @@ import type { AIAnalysisResult } from '@/api/ai'
 import MathInput from '@/components/MathInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 import ImageRecognition from '@/components/ImageRecognition.vue'
+import MathPreview from '@/components/MathPreview.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -397,10 +426,53 @@ onMounted(async () => {
 const loadQuestionDetail = async (id: number) => {
   try {
     const detail = await getErrorQuestionDetail(id)
+    console.log('=== 加载错题详情 ===')
+    console.log('detail:', detail)
+    console.log('questionImages:', detail.questionImages)
+    console.log('answerImages:', detail.answerImages)
+    console.log('userAnswerImages:', detail.userAnswerImages)
+    
     // 先保存知识点ID，因为handleSubjectChange会清空它
     const savedKnowledgeId = detail.knowledgeId
     
     Object.assign(form, detail)
+    
+    // 回显图片
+    if (detail.questionImages) {
+      try {
+        questionImages.value = JSON.parse(detail.questionImages)
+        console.log('题目图片解析成功:', questionImages.value)
+      } catch (e) {
+        // 如果不是JSON格式，尝试作为单个URL处理
+        questionImages.value = detail.questionImages ? [detail.questionImages] : []
+        console.log('题目图片作为单个URL处理:', questionImages.value)
+      }
+    }
+    
+    if (detail.answerImages) {
+      try {
+        answerImages.value = JSON.parse(detail.answerImages)
+        console.log('答案图片解析成功:', answerImages.value)
+      } catch (e) {
+        answerImages.value = detail.answerImages ? [detail.answerImages] : []
+        console.log('答案图片作为单个URL处理:', answerImages.value)
+      }
+    }
+    
+    if (detail.userAnswerImages) {
+      try {
+        userAnswerImages.value = JSON.parse(detail.userAnswerImages)
+        console.log('用户答案图片解析成功:', userAnswerImages.value)
+      } catch (e) {
+        userAnswerImages.value = detail.userAnswerImages ? [detail.userAnswerImages] : []
+        console.log('用户答案图片作为单个URL处理:', userAnswerImages.value)
+      }
+    }
+    
+    console.log('最终图片数组:')
+    console.log('questionImages:', questionImages.value)
+    console.log('answerImages:', answerImages.value)
+    console.log('userAnswerImages:', userAnswerImages.value)
     
     if (detail.subjectId) {
       await handleSubjectChange(detail.subjectId)
@@ -410,6 +482,7 @@ const loadQuestionDetail = async (id: number) => {
       }
     }
   } catch (error) {
+    console.error('加载错题详情失败:', error)
     ElMessage.error('加载错题详情失败')
   }
 }
@@ -431,11 +504,19 @@ const handleSubmit = async () => {
     if (valid) {
       loading.value = true
       try {
+        // 准备提交数据，将图片数组转换为JSON字符串
+        const submitData = {
+          ...form,
+          questionImages: questionImages.value.length > 0 ? JSON.stringify(questionImages.value) : undefined,
+          answerImages: answerImages.value.length > 0 ? JSON.stringify(answerImages.value) : undefined,
+          userAnswerImages: userAnswerImages.value.length > 0 ? JSON.stringify(userAnswerImages.value) : undefined
+        }
+        
         if (isEdit.value && questionId.value) {
-          await updateErrorQuestion(questionId.value, form)
+          await updateErrorQuestion(questionId.value, submitData)
           ElMessage.success('更新成功')
         } else {
-          await addErrorQuestion(form)
+          await addErrorQuestion(submitData)
           ElMessage.success('录入成功')
         }
         router.push('/error-questions')
@@ -719,6 +800,82 @@ const removeImage = (type: 'question' | 'answer' | 'userAnswer', index: number) 
   color: #606266;
   line-height: 1.8;
   white-space: pre-line;
+}
+
+/* 解析输入框和预览样式 */
+.analysis-input-wrapper {
+  width: 100%;
+}
+
+.formula-preview {
+  margin-top: 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  overflow: hidden;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: rgba(64, 158, 255, 0.1);
+  border-bottom: 1px solid #dcdfe6;
+}
+
+.preview-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #409EFF;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preview-title::before {
+  content: '📐';
+  font-size: 16px;
+}
+
+.preview-content {
+  padding: 15px;
+  min-height: 60px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.preview-content :deep(.katex) {
+  font-size: 1.05em;
+}
+
+.preview-content :deep(.katex-display) {
+  margin: 1em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.8em;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.math-content {
+  color: #606266;
+  line-height: 1.8;
+}
+
+.math-content :deep(.katex) {
+  font-size: 1.05em;
+}
+
+.math-content :deep(.katex-display) {
+  margin: 0.8em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5em;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
 }
 
 .dialog-footer {

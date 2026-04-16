@@ -84,8 +84,10 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="录入时间" width="150" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
+            <el-button type="primary" link @click="handleView(row)">查看</el-button>
+            <el-button type="info" link @click="handleShare(row)">分享</el-button>
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
             <el-button type="success" link @click="handleReview(row)">复习</el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
@@ -113,7 +115,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Share } from '@element-plus/icons-vue'
 import { listErrorQuestions, deleteErrorQuestion } from '@/api/error-question'
 import { listSubjects } from '@/api/subject'
 import type { ErrorQuestion, ErrorQuestionQuery } from '@/api/error-question'
@@ -212,12 +214,28 @@ const handleCreate = () => {
   router.push('/error-question/create')
 }
 
+const handleView = (row: ErrorQuestion) => {
+  router.push(`/error-question/detail/${row.questionId}`)
+}
+
 const handleEdit = (row: ErrorQuestion) => {
   router.push(`/error-question/create?id=${row.questionId}`)
 }
 
 const handleReview = (row: ErrorQuestion) => {
   router.push(`/review?questionId=${row.questionId}`)
+}
+
+const handleShare = (row: ErrorQuestion) => {
+  // 生成分享链接
+  const shareLink = `${window.location.origin}/error-question/detail/${row.questionId}?share=1`
+  
+  // 复制到剪贴板
+  navigator.clipboard.writeText(shareLink).then(() => {
+    ElMessage.success('分享链接已复制到剪贴板')
+  }).catch(() => {
+    ElMessage.error('复制失败，请手动复制')
+  })
 }
 
 const handleDelete = (row: ErrorQuestion) => {

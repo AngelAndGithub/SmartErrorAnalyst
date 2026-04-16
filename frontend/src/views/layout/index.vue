@@ -20,6 +20,10 @@
           <el-icon><Document /></el-icon>
           <span>错题管理</span>
         </el-menu-item>
+        <el-menu-item index="/shares">
+          <el-icon><Share /></el-icon>
+          <span>错题分享</span>
+        </el-menu-item>
         <el-menu-item index="/review">
           <el-icon><Calendar /></el-icon>
           <span>复习计划</span>
@@ -59,7 +63,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { HomeFilled, Document, Calendar, TrendCharts, ArrowDown } from '@element-plus/icons-vue'
+import { HomeFilled, Document, Calendar, TrendCharts, ArrowDown, Share } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()

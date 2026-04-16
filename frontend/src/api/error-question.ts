@@ -8,9 +8,12 @@ export interface ErrorQuestion {
   difficulty: number
   errorReason: string
   questionContent: string
+  questionImages?: string
   options?: string
   correctAnswer: string
+  answerImages?: string
   userAnswer: string
+  userAnswerImages?: string
   analysis?: string
   notes?: string
   tags?: string

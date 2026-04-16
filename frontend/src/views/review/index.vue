@@ -56,12 +56,16 @@
         <div v-if="reviewMode === 'test'" class="test-mode">
           <div class="question-section">
             <h4>题目内容</h4>
-            <div class="content-box">{{ currentQuestion.questionContent }}</div>
+            <div class="content-box">
+              <MathPreview :content="currentQuestion.questionContent || ''" />
+            </div>
           </div>
           
           <div class="answer-section">
             <h4>你的答案</h4>
-            <div class="content-box">{{ currentQuestion.userAnswer }}</div>
+            <div class="content-box">
+              <MathPreview :content="currentQuestion.userAnswer || ''" />
+            </div>
           </div>
           
           <div class="action-section">
@@ -74,22 +78,30 @@
         <div v-else class="analysis-mode">
           <div class="question-section">
             <h4>题目内容</h4>
-            <div class="content-box">{{ currentQuestion.questionContent }}</div>
+            <div class="content-box">
+              <MathPreview :content="currentQuestion.questionContent || ''" />
+            </div>
           </div>
           
           <div class="answer-section">
             <h4>正确答案</h4>
-            <div class="content-box correct">{{ currentQuestion.correctAnswer }}</div>
+            <div class="content-box correct">
+              <MathPreview :content="currentQuestion.correctAnswer || ''" />
+            </div>
           </div>
           
           <div class="answer-section">
             <h4>你的答案</h4>
-            <div class="content-box" :class="{ wrong: true }">{{ currentQuestion.userAnswer }}</div>
+            <div class="content-box" :class="{ wrong: true }">
+              <MathPreview :content="currentQuestion.userAnswer || ''" />
+            </div>
           </div>
           
           <div v-if="currentQuestion.analysis" class="analysis-section">
             <h4>解析</h4>
-            <div class="content-box">{{ currentQuestion.analysis }}</div>
+            <div class="content-box">
+              <MathPreview :content="currentQuestion.analysis" />
+            </div>
           </div>
           
           <div class="result-section">
@@ -120,6 +132,7 @@ import { ElMessage } from 'element-plus'
 import { getTodayPlans, countTodayPlans, getReviewQuestion, submitReviewResult } from '@/api/review'
 import type { ReviewPlan } from '@/api/review'
 import type { ErrorQuestion } from '@/api/error-question'
+import MathPreview from '@/components/MathPreview.vue'
 
 const todayPlans = ref<ReviewPlan[]>([])
 const todayCount = ref(0)

@@ -35,6 +35,12 @@ const router = createRouter({
           meta: { title: '录入错题' }
         },
         {
+          path: '/error-question/detail/:id',
+          name: 'errorQuestionDetail',
+          component: () => import('../views/error-question/detail.vue'),
+          meta: { title: '错题详情' }
+        },
+        {
           path: '/review',
           name: 'review',
           component: () => import('../views/review/index.vue'),
@@ -45,6 +51,18 @@ const router = createRouter({
           name: 'analysis',
           component: () => import('../views/analysis/index.vue'),
           meta: { title: '学情分析' }
+        },
+        {
+          path: '/shares',
+          name: 'shares',
+          component: () => import('../views/share/index.vue'),
+          meta: { title: '错题分享' }
+        },
+        {
+          path: '/share/detail/:shareId',
+          name: 'shareDetail',
+          component: () => import('../views/share/share-detail.vue'),
+          meta: { title: '分享详情' }
         }
       ]
     }
