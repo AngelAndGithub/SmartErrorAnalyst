@@ -325,24 +325,19 @@ public class AIServiceImpl implements AIService {
 
             String url = zhipuBaseUrl + "/chat/completions";
             
-            // 处理base64图片URL格式 - 智谱AI需要使用完整的data URI格式
+            // 处理base64图片URL格式 - 智谱AI要求纯base64,必须移除data URI前缀
             String imageUrlValue = imageBase64;
             
-            // 清理base64数据中的换行符和空格
-            if (imageBase64.contains("\n") || imageBase64.contains("\r") || imageBase64.contains(" ")) {
-                log.warn("检测到base64数据中包含换行符或空格,进行清理");
-                imageUrlValue = imageBase64.replaceAll("\\s+", "");
+            // 1. 清理base64数据中的换行符、空格、制表符
+            imageUrlValue = imageUrlValue.replaceAll("\\s+", "");
+            
+            // 2. 强制移除 data:image/xxx;base64, 前缀(智谱禁止带前缀)
+            if (imageUrlValue.startsWith("data:image/")) {
+                imageUrlValue = imageUrlValue.replaceAll("^data:image/\\w+;base64,", "");
+                log.info("已移除data URI前缀,使用纯base64格式");
             }
             
-            // 如果不是data URI格式,添加前缀
-            if (!imageUrlValue.startsWith("data:image/")) {
-                // 根据图片内容判断类型,默认使用png
-                String prefix = "data:image/png;base64,";
-                imageUrlValue = prefix + imageUrlValue;
-                log.info("已添加data URI前缀: {}", prefix);
-            }
-            
-            log.info("图片数据长度: {}, 前80字符: {}", 
+            log.info("处理后纯Base64长度: {}, 前80字符: {}", 
                 imageUrlValue.length(), 
                 imageUrlValue.length() > 80 ? imageUrlValue.substring(0, 80) : imageUrlValue);
             
