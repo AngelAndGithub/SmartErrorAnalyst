@@ -26,11 +26,17 @@ public class ErrorQuestion {
     
     private String questionContent;
     
+    private String questionImages;
+    
     private String options;
     
     private String correctAnswer;
     
+    private String answerImages;
+    
     private String userAnswer;
+    
+    private String userAnswerImages;
     
     private String analysis;
     

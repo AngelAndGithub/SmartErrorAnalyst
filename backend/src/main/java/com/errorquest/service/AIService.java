@@ -33,4 +33,12 @@ public interface AIService {
      * 获取已启用（配置了API Key）的AI提供商列表
      */
     java.util.List<String> getEnabledProviders();
+    
+    /**
+     * 识别图片中的文字内容
+     * @param imageBase64 Base64编码的图片
+     * @param prompt 识别提示词
+     * @return 识别结果文本
+     */
+    String recognizeImage(String imageBase64, String prompt);
 }

@@ -309,4 +309,80 @@ public class AIServiceImpl implements AIService {
         
         return result;
     }
+
+    @Override
+    public String recognizeImage(String imageBase64, String prompt) {
+        log.info("开始调用智谱AI视觉模型进行图片识别");
+        
+        try {
+            // 检查API Key
+            if (zhipuApiKey == null || zhipuApiKey.isEmpty()) {
+                throw new IOException("智谱AI API Key未配置");
+            }
+
+            String url = zhipuBaseUrl + "/chat/completions";
+            
+            // 构建多模态请求体
+            Map<String, Object> requestBodyMap = new HashMap<>();
+            requestBodyMap.put("model", "glm-4v-flash"); // 使用智谱视觉模型
+            requestBodyMap.put("max_tokens", 2000);
+            
+            // 构建消息内容
+            List<Map<String, Object>> messages = new ArrayList<>();
+            Map<String, Object> userMessage = new HashMap<>();
+            userMessage.put("role", "user");
+            
+            // 构建content数组（支持图文混合）
+            List<Map<String, Object>> contentList = new ArrayList<>();
+            
+            // 添加图片
+            Map<String, Object> imageContent = new HashMap<>();
+            imageContent.put("type", "image_url");
+            Map<String, String> imageUrl = new HashMap<>();
+            imageUrl.put("url", imageBase64); // base64编码的图片
+            imageContent.put("image_url", imageUrl);
+            contentList.add(imageContent);
+            
+            // 添加文本提示
+            Map<String, Object> textContent = new HashMap<>();
+            textContent.put("type", "text");
+            textContent.put("text", prompt != null ? prompt : "请识别图片中的文字内容，包括数学公式");
+            contentList.add(textContent);
+            
+            userMessage.put("content", contentList);
+            messages.add(userMessage);
+            
+            requestBodyMap.put("messages", messages);
+            
+            // 转换为JSON
+            String requestBody = objectMapper.writeValueAsString(requestBodyMap);
+            log.debug("智谱视觉API请求: {}", requestBody);
+            
+            // 构建HTTP请求
+            Request request = new Request.Builder()
+                    .url(url)
+                    .header("Authorization", "Bearer " + zhipuApiKey)
+                    .header("Content-Type", "application/json")
+                    .post(RequestBody.create(requestBody, MediaType.parse("application/json")))
+                    .build();
+            
+            // 发送请求
+            try (Response response = httpClient.newCall(request).execute()) {
+                String responseBody = response.body().string();
+                log.info("智谱视觉API响应: {}", responseBody);
+                
+                if (!response.isSuccessful()) {
+                    throw new IOException("API调用失败: " + response + ", 响应: " + responseBody);
+                }
+
+                JsonNode jsonNode = objectMapper.readTree(responseBody);
+                String content = jsonNode.path("choices").get(0).path("message").path("content").asText();
+                
+                return content;
+            }
+        } catch (Exception e) {
+            log.error("调用智谱AI视觉模型失败", e);
+            return "图片识别失败: " + e.getMessage();
+        }
+    }
 }

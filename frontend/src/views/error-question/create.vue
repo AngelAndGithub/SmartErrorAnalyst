@@ -79,27 +79,91 @@
         </el-form-item>
         
         <el-form-item label="题目内容" prop="questionContent">
-          <MathInput
-            v-model="form.questionContent"
-            :rows="4"
-            placeholder="请输入题目内容，支持数学公式（如 $x^2 + y^2 = 1$）"
-          />
+          <div class="form-item-with-image">
+            <MathInput
+              v-model="form.questionContent"
+              :rows="4"
+              placeholder="请输入题目内容，支持数学公式（如 $x^2 + y^2 = 1$）"
+            />
+            <div class="image-actions-bar">
+              <el-button size="small" @click="openImageUpload('question')">
+                <el-icon><Upload /></el-icon>
+                上传图片
+              </el-button>
+              <ImageRecognition
+                v-if="questionImages.length > 0"
+                :image-url="questionImages[questionImages.length - 1]"
+                type="question"
+                button-text="识别最后一张图"
+                @success="handleRecognitionSuccess('question', $event)"
+              />
+            </div>
+            <!-- 已上传的图片缩略图 -->
+            <div v-if="questionImages.length > 0" class="uploaded-images">
+              <div v-for="(img, index) in questionImages" :key="index" class="thumb-item">
+                <el-image :src="img" fit="cover" @click="previewImage(img)" />
+                <el-icon class="remove-icon" @click="removeImage('question', index)"><Close /></el-icon>
+              </div>
+            </div>
+          </div>
         </el-form-item>
         
         <el-form-item label="正确答案" prop="correctAnswer">
-          <MathInput
-            v-model="form.correctAnswer"
-            :rows="2"
-            placeholder="请输入正确答案，支持数学公式"
-          />
+          <div class="form-item-with-image">
+            <MathInput
+              v-model="form.correctAnswer"
+              :rows="2"
+              placeholder="请输入正确答案，支持数学公式"
+            />
+            <div class="image-actions-bar">
+              <el-button size="small" @click="openImageUpload('answer')">
+                <el-icon><Upload /></el-icon>
+                上传图片
+              </el-button>
+              <ImageRecognition
+                v-if="answerImages.length > 0"
+                :image-url="answerImages[answerImages.length - 1]"
+                type="answer"
+                button-text="识别最后一张图"
+                @success="handleRecognitionSuccess('answer', $event)"
+              />
+            </div>
+            <div v-if="answerImages.length > 0" class="uploaded-images">
+              <div v-for="(img, index) in answerImages" :key="index" class="thumb-item">
+                <el-image :src="img" fit="cover" @click="previewImage(img)" />
+                <el-icon class="remove-icon" @click="removeImage('answer', index)"><Close /></el-icon>
+              </div>
+            </div>
+          </div>
         </el-form-item>
         
         <el-form-item label="你的答案" prop="userAnswer">
-          <MathInput
-            v-model="form.userAnswer"
-            :rows="2"
-            placeholder="请输入你的答案，支持数学公式"
-          />
+          <div class="form-item-with-image">
+            <MathInput
+              v-model="form.userAnswer"
+              :rows="2"
+              placeholder="请输入你的答案，支持数学公式"
+            />
+            <div class="image-actions-bar">
+              <el-button size="small" @click="openImageUpload('userAnswer')">
+                <el-icon><Upload /></el-icon>
+                上传图片
+              </el-button>
+              <ImageRecognition
+                v-if="userAnswerImages.length > 0"
+                :image-url="userAnswerImages[userAnswerImages.length - 1]"
+                type="userAnswer"
+                button-text="识别最后一张图"
+                @success="handleRecognitionSuccess('userAnswer', $event)"
+              />
+            </div>
+            <div v-if="userAnswerImages.length > 0" class="uploaded-images">
+              <div v-for="(img, index) in userAnswerImages" :key="index" class="thumb-item">
+                <el-image :src="img" fit="cover" @click="previewImage(img)" />
+                <el-icon class="remove-icon" @click="removeImage('userAnswer', index)"><Close /></el-icon>
+              </div>
+            </div>
+          </div>
         </el-form-item>
         
         <el-form-item label="解析">
@@ -213,6 +277,18 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 图片上传对话框 -->
+    <ImageUpload
+      ref="imageUploadRef"
+      :title="`上传${currentUploadType === 'question' ? '题目' : currentUploadType === 'answer' ? '答案' : '用户答案'}图片`"
+      @confirm="handleImageUploadConfirm"
+    />
+
+    <!-- 图片预览对话框 -->
+    <el-dialog v-model="imagePreviewVisible" width="80%" center>
+      <el-image :src="previewImageUrl" fit="contain" style="width: 100%" />
+    </el-dialog>
   </div>
 </template>
 
@@ -221,7 +297,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { MagicStick, Loading, InfoFilled } from '@element-plus/icons-vue'
+import { MagicStick, Loading, InfoFilled, Upload, Close } from '@element-plus/icons-vue'
 import { addErrorQuestion, updateErrorQuestion, getErrorQuestionDetail } from '@/api/error-question'
 import { listSubjects, getKnowledgeBySubject } from '@/api/subject'
 import { analyzeErrorQuestion, getProvidersInfo, getAvailableProviders, type AIProviderInfo } from '@/api/ai'
@@ -229,6 +305,8 @@ import type { Subject, Knowledge } from '@/api/subject'
 import type { ErrorQuestion } from '@/api/error-question'
 import type { AIAnalysisResult } from '@/api/ai'
 import MathInput from '@/components/MathInput.vue'
+import ImageUpload from '@/components/ImageUpload.vue'
+import ImageRecognition from '@/components/ImageRecognition.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -246,6 +324,15 @@ const providerOptions = ref<Record<string, AIProviderInfo>>({
   mock: { name: '模拟模式', description: '本地模拟，无需配置', url: '' }
 })
 const availableProviders = ref<string[]>(['mock'])
+
+// 图片相关状态
+const imageUploadRef = ref()
+const currentUploadType = ref<'question' | 'answer' | 'userAnswer'>('question')
+const questionImages = ref<string[]>([])
+const answerImages = ref<string[]>([])
+const userAnswerImages = ref<string[]>([])
+const imagePreviewVisible = ref(false)
+const previewImageUrl = ref('')
 
 const subjects = ref<Subject[]>([])
 const knowledgeList = ref<Knowledge[]>([])
@@ -411,6 +498,55 @@ const applyAIResult = () => {
   }
 }
 
+// 图片上传相关方法
+const openImageUpload = (type: 'question' | 'answer' | 'userAnswer') => {
+  currentUploadType.value = type
+  imageUploadRef.value?.open()
+}
+
+const handleImageUploadConfirm = (images: Array<{ url: string }>) => {
+  const urls = images.map(img => img.url)
+  
+  if (currentUploadType.value === 'question') {
+    questionImages.value = [...questionImages.value, ...urls]
+  } else if (currentUploadType.value === 'answer') {
+    answerImages.value = [...answerImages.value, ...urls]
+  } else {
+    userAnswerImages.value = [...userAnswerImages.value, ...urls]
+  }
+  
+  ElMessage.success(`成功上传 ${urls.length} 张图片`)
+}
+
+// 图片识别成功回调
+const handleRecognitionSuccess = (type: 'question' | 'answer' | 'userAnswer', result: string) => {
+  if (type === 'question') {
+    form.questionContent = form.questionContent ? form.questionContent + '\n' + result : result
+  } else if (type === 'answer') {
+    form.correctAnswer = form.correctAnswer ? form.correctAnswer + '\n' + result : result
+  } else {
+    form.userAnswer = form.userAnswer ? form.userAnswer + '\n' + result : result
+  }
+  ElMessage.success('识别结果已填入对应字段')
+}
+
+// 图片预览
+const previewImage = (url: string) => {
+  previewImageUrl.value = url
+  imagePreviewVisible.value = true
+}
+
+// 删除图片
+const removeImage = (type: 'question' | 'answer' | 'userAnswer', index: number) => {
+  if (type === 'question') {
+    questionImages.value.splice(index, 1)
+  } else if (type === 'answer') {
+    answerImages.value.splice(index, 1)
+  } else {
+    userAnswerImages.value.splice(index, 1)
+  }
+}
+
 
 </script>
 
@@ -418,6 +554,69 @@ const applyAIResult = () => {
 .create-error-question {
   padding: 0;
   width: 100%;
+}
+
+.form-item-with-image {
+  width: 100%;
+}
+
+.image-actions-bar {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px;
+  background-color: #f5f7fa;
+  border-radius: 6px;
+}
+
+.uploaded-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.thumb-item {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.thumb-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.thumb-item .el-image {
+  width: 100%;
+  height: 100%;
+}
+
+.remove-icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background-color: rgba(245, 108, 108, 0.9);
+  color: white;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.thumb-item:hover .remove-icon {
+  display: flex;
+}
+
+.remove-icon:hover {
+  background-color: rgba(245, 108, 108, 1);
 }
 
 .create-error-question :deep(.el-card) {
