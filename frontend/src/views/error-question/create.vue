@@ -387,8 +387,9 @@ const startAIAnalysis = async () => {
       provider: selectedProvider.value
     })
     
-    aiResult.value = (result as any).data as AIAnalysisResult
-    ElMessage.success(`${providerOptions.value[selectedProvider.value]?.name} 解析完成`)
+    aiResult.value = (result as unknown) as AIAnalysisResult
+    const providerName = providerOptions.value[selectedProvider.value]?.name || selectedProvider.value
+    ElMessage.success(`${providerName} 解析完成`)
   } catch (error) {
     console.error(error)
     ElMessage.error('AI解析失败，请重试')
