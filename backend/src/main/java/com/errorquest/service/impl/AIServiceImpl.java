@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -345,29 +345,29 @@ public class AIServiceImpl implements AIService {
                 imageUrlValue.length(), 
                 imageUrlValue.length() > 80 ? imageUrlValue.substring(0, 80) : imageUrlValue);
             
-            // 构建多模态请求体
-            Map<String, Object> requestBodyMap = new HashMap<>();
+            // 构建多模态请求体 - 使用LinkedHashMap保证字段顺序
+            Map<String, Object> requestBodyMap = new LinkedHashMap<>();
             requestBodyMap.put("model", "glm-4v-flash"); // 使用智谱视觉模型
             requestBodyMap.put("max_tokens", 2000);
             
             // 构建消息内容
             List<Map<String, Object>> messages = new ArrayList<>();
-            Map<String, Object> userMessage = new HashMap<>();
+            Map<String, Object> userMessage = new LinkedHashMap<>();
             userMessage.put("role", "user");
             
             // 构建content数组（支持图文混合）
             List<Map<String, Object>> contentList = new ArrayList<>();
             
             // 添加图片
-            Map<String, Object> imageContent = new HashMap<>();
+            Map<String, Object> imageContent = new LinkedHashMap<>();
             imageContent.put("type", "image_url");
-            Map<String, String> imageUrl = new HashMap<>();
+            Map<String, String> imageUrl = new LinkedHashMap<>();
             imageUrl.put("url", imageUrlValue);
             imageContent.put("image_url", imageUrl);
             contentList.add(imageContent);
             
             // 添加文本提示
-            Map<String, Object> textContent = new HashMap<>();
+            Map<String, Object> textContent = new LinkedHashMap<>();
             textContent.put("type", "text");
             textContent.put("text", prompt != null ? prompt : "请识别图片中的文字内容，包括数学公式");
             contentList.add(textContent);
@@ -379,14 +379,11 @@ public class AIServiceImpl implements AIService {
             
             // 转换为JSON
             String requestBody = objectMapper.writeValueAsString(requestBodyMap);
-            // 直接打印到控制台,确保能看到
+            // 直接打印完整请求体到控制台
             System.out.println("========== 智谱视觉API请求 ==========");
-            System.out.println("请求体长度: " + requestBody.length());
-            // 只打印前300字符,避免base64太长
-            String logRequest = requestBody.length() > 300 ? requestBody.substring(0, 300) + "...[省略" + (requestBody.length() - 300) + "字符]..." : requestBody;
-            System.out.println("请求体: " + logRequest);
+            System.out.println(requestBody);
             System.out.println("=====================================");
-            log.info("智谱视觉API请求: {}", logRequest);
+            log.info("智谱视觉API请求体长度: {}", requestBody.length());
             
             // 构建HTTP请求
             Request request = new Request.Builder()
