@@ -170,7 +170,7 @@
         </div>
         <div v-else-if="aiResult" class="ai-result">
           <el-alert
-            :title="'AI解析结果 - ' + providerOptions[selectedProvider]?.name"
+            :title="'AI解析结果 - ' + (providerOptions[selectedProvider]?.name || selectedProvider)"
             type="success"
             :closable="false"
             class="ai-alert"
@@ -290,8 +290,9 @@ onMounted(async () => {
     if (providersRes && Array.isArray(providersRes)) {
       availableProviders.value = providersRes
     }
-    if (infoRes && typeof infoRes === 'object' && 'data' in infoRes) {
-      providerOptions.value = (infoRes as any).data as Record<string, AIProviderInfo>
+    if (infoRes && typeof infoRes === 'object') {
+      // request.ts 响应拦截器已经返回了 res.data，所以 infoRes 本身就是数据
+      providerOptions.value = (infoRes as unknown) as Record<string, AIProviderInfo>
     }
   } catch (error) {
     console.error('加载AI提供商信息失败:', error)
