@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="启动前后端" type="CompoundRunConfigurationType" factoryName="Compound">
+    <toRun name="启动后端（Spring Boot）" type="SpringBootApplicationConfigurationType" />
+    <toRun name="启动前端（Vite）" type="js.build_tools.npm" />
+    <method v="2" />
+  </configuration>
+</component>

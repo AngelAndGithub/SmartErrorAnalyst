@@ -79,29 +79,26 @@
         </el-form-item>
         
         <el-form-item label="题目内容" prop="questionContent">
-          <el-input
+          <MathInput
             v-model="form.questionContent"
-            type="textarea"
             :rows="4"
-            placeholder="请输入题目内容"
+            placeholder="请输入题目内容，支持数学公式（如 $x^2 + y^2 = 1$）"
           />
         </el-form-item>
         
         <el-form-item label="正确答案" prop="correctAnswer">
-          <el-input
+          <MathInput
             v-model="form.correctAnswer"
-            type="textarea"
             :rows="2"
-            placeholder="请输入正确答案"
+            placeholder="请输入正确答案，支持数学公式"
           />
         </el-form-item>
         
         <el-form-item label="你的答案" prop="userAnswer">
-          <el-input
+          <MathInput
             v-model="form.userAnswer"
-            type="textarea"
             :rows="2"
-            placeholder="请输入你的答案"
+            placeholder="请输入你的答案，支持数学公式"
           />
         </el-form-item>
         
@@ -231,6 +228,7 @@ import { analyzeErrorQuestion, getProvidersInfo, getAvailableProviders, type AIP
 import type { Subject, Knowledge } from '@/api/subject'
 import type { ErrorQuestion } from '@/api/error-question'
 import type { AIAnalysisResult } from '@/api/ai'
+import MathInput from '@/components/MathInput.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -292,8 +290,8 @@ onMounted(async () => {
     if (providersRes && Array.isArray(providersRes)) {
       availableProviders.value = providersRes
     }
-    if (infoRes && typeof infoRes === 'object') {
-      providerOptions.value = infoRes
+    if (infoRes && typeof infoRes === 'object' && 'data' in infoRes) {
+      providerOptions.value = (infoRes as any).data as Record<string, AIProviderInfo>
     }
   } catch (error) {
     console.error('加载AI提供商信息失败:', error)
@@ -389,7 +387,7 @@ const startAIAnalysis = async () => {
       provider: selectedProvider.value
     })
     
-    aiResult.value = result
+    aiResult.value = (result as any).data as AIAnalysisResult
     ElMessage.success(`${providerOptions.value[selectedProvider.value]?.name} 解析完成`)
   } catch (error) {
     console.error(error)
