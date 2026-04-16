@@ -326,7 +326,7 @@ public class AIServiceImpl implements AIService {
             String url = zhipuBaseUrl + "/chat/completions";
             
             // 处理base64图片URL格式
-            // 前端FileReader.readAsDataURL返回的已经是完整的data URI格式
+            // 智谱AI GLM-4V-Flash推荐使用纯base64字符串(不带data URI前缀)
             String imageUrlValue = imageBase64;
             
             // 清理base64数据中的换行符和空格
@@ -335,10 +335,13 @@ public class AIServiceImpl implements AIService {
                 imageUrlValue = imageBase64.replaceAll("\\s+", "");
             }
             
-            if (!imageUrlValue.startsWith("data:image/")) {
-                // 如果不是data URI格式,需要添加前缀
-                log.warn("图片数据不是data URI格式,自动添加前缀");
-                imageUrlValue = "data:image/jpeg;base64," + imageUrlValue;
+            // 如果是data URI格式,去掉前缀,只保留纯base64数据
+            if (imageUrlValue.startsWith("data:image/")) {
+                int commaIndex = imageUrlValue.indexOf(',');
+                if (commaIndex > 0 && commaIndex < imageUrlValue.length() - 1) {
+                    imageUrlValue = imageUrlValue.substring(commaIndex + 1);
+                    log.info("已移除data URI前缀,使用纯base64格式");
+                }
             }
             
             log.info("图片数据长度: {}, 前80字符: {}", 
