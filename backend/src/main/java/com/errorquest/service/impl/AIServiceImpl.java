@@ -360,12 +360,10 @@ public class AIServiceImpl implements AIService {
             textContent.put("text", prompt != null ? prompt : "请识别图片中的文字内容，包括数学公式");
             contentList.add(textContent);
             
-            // 再添加图片 - 使用标准的image_url格式
+            // 再添加图片 - 智谱AI视觉模型官方标准格式
             Map<String, Object> imageContent = new LinkedHashMap<>();
-            imageContent.put("type", "image_url"); // 使用image_url
-            Map<String, String> imageUrl = new LinkedHashMap<>();
-            imageUrl.put("url", imageUrlValue); // data URI格式的base64
-            imageContent.put("image_url", imageUrl);
+            imageContent.put("type", "image"); // 关键:必须是image,不是image_url
+            imageContent.put("image", imageUrlValue); // 关键:直接赋值纯base64,无嵌套
             contentList.add(imageContent);
             
             userMessage.put("content", contentList);
