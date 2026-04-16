@@ -358,19 +358,19 @@ public class AIServiceImpl implements AIService {
             // 构建content数组（支持图文混合）
             List<Map<String, Object>> contentList = new ArrayList<>();
             
-            // 添加图片
+            // 先添加文本提示（某些API要求text在前）
+            Map<String, Object> textContent = new LinkedHashMap<>();
+            textContent.put("type", "text");
+            textContent.put("text", prompt != null ? prompt : "请识别图片中的文字内容，包括数学公式");
+            contentList.add(textContent);
+            
+            // 再添加图片
             Map<String, Object> imageContent = new LinkedHashMap<>();
             imageContent.put("type", "image_url");
             Map<String, String> imageUrl = new LinkedHashMap<>();
             imageUrl.put("url", imageUrlValue);
             imageContent.put("image_url", imageUrl);
             contentList.add(imageContent);
-            
-            // 添加文本提示
-            Map<String, Object> textContent = new LinkedHashMap<>();
-            textContent.put("type", "text");
-            textContent.put("text", prompt != null ? prompt : "请识别图片中的文字内容，包括数学公式");
-            contentList.add(textContent);
             
             userMessage.put("content", contentList);
             messages.add(userMessage);
