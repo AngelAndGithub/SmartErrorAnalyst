@@ -328,13 +328,22 @@ public class AIServiceImpl implements AIService {
             // 处理base64图片URL格式
             // 前端FileReader.readAsDataURL返回的已经是完整的data URI格式
             String imageUrlValue = imageBase64;
-            if (!imageBase64.startsWith("data:image/")) {
-                // 如果不是data URI格式,需要添加前缀
-                log.warn("图片数据不是data URI格式,自动添加前缀");
-                imageUrlValue = "data:image/jpeg;base64," + imageBase64;
+            
+            // 清理base64数据中的换行符和空格
+            if (imageBase64.contains("\n") || imageBase64.contains("\r") || imageBase64.contains(" ")) {
+                log.warn("检测到base64数据中包含换行符或空格,进行清理");
+                imageUrlValue = imageBase64.replaceAll("\\s+", "");
             }
             
-            log.debug("最终图片URL格式: {}", imageUrlValue.length() > 50 ? imageUrlValue.substring(0, 50) + "..." : imageUrlValue);
+            if (!imageUrlValue.startsWith("data:image/")) {
+                // 如果不是data URI格式,需要添加前缀
+                log.warn("图片数据不是data URI格式,自动添加前缀");
+                imageUrlValue = "data:image/jpeg;base64," + imageUrlValue;
+            }
+            
+            log.info("图片数据长度: {}, 前80字符: {}", 
+                imageUrlValue.length(), 
+                imageUrlValue.length() > 80 ? imageUrlValue.substring(0, 80) : imageUrlValue);
             
             // 构建多模态请求体
             Map<String, Object> requestBodyMap = new HashMap<>();
