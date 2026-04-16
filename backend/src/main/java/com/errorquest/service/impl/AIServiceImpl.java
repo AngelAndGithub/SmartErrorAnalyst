@@ -150,16 +150,16 @@ public class AIServiceImpl implements AIService {
         String url = zhipuBaseUrl + "/chat/completions";
         
         // 使用Map构建请求体，避免字符串转义问题
-        Map<String, Object> requestBodyMap = new HashMap<>();
+        Map<String, Object> requestBodyMap = new LinkedHashMap<>();
         requestBodyMap.put("model", zhipuModel);
         
         List<Map<String, String>> messages = new ArrayList<>();
-        Map<String, String> systemMessage = new HashMap<>();
+        Map<String, String> systemMessage = new LinkedHashMap<>();
         systemMessage.put("role", "system");
         systemMessage.put("content", "你是一个专业的教育辅导助手");
         messages.add(systemMessage);
         
-        Map<String, String> userMessage = new HashMap<>();
+        Map<String, String> userMessage = new LinkedHashMap<>();
         userMessage.put("role", "user");
         userMessage.put("content", prompt);
         messages.add(userMessage);
@@ -202,18 +202,18 @@ public class AIServiceImpl implements AIService {
         String url = deepseekBaseUrl + "/chat/completions";
         
         // 使用ObjectMapper构建JSON请求体，避免特殊字符问题
-        Map<String, Object> requestBodyMap = new HashMap<>();
+        Map<String, Object> requestBodyMap = new LinkedHashMap<>();
         requestBodyMap.put("model", deepseekModel);
         requestBodyMap.put("temperature", 0.7);
         requestBodyMap.put("max_tokens", 2000);
         
         List<Map<String, String>> messages = new ArrayList<>();
-        Map<String, String> systemMessage = new HashMap<>();
+        Map<String, String> systemMessage = new LinkedHashMap<>();
         systemMessage.put("role", "system");
         systemMessage.put("content", "你是一个专业的教育辅导助手");
         messages.add(systemMessage);
         
-        Map<String, String> userMessage = new HashMap<>();
+        Map<String, String> userMessage = new LinkedHashMap<>();
         userMessage.put("role", "user");
         userMessage.put("content", prompt);
         messages.add(userMessage);
