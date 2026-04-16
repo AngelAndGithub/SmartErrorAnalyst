@@ -77,7 +77,9 @@ const props = defineProps<{
   placeholder?: string
 }>()
 
-const emit = defineEmits<['update:modelValue']>()
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
 
 const inputValue = ref(props.modelValue || '')
 const showPreview = ref(false)
