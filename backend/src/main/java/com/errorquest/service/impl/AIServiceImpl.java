@@ -313,6 +313,9 @@ public class AIServiceImpl implements AIService {
     @Override
     public String recognizeImage(String imageBase64, String prompt) {
         log.info("开始调用智谱AI视觉模型进行图片识别");
+        log.debug("接收到的图片数据长度: {}, 开头50字符: {}", 
+            imageBase64 != null ? imageBase64.length() : 0,
+            imageBase64 != null && imageBase64.length() > 50 ? imageBase64.substring(0, 50) : imageBase64);
         
         try {
             // 检查API Key
@@ -323,22 +326,15 @@ public class AIServiceImpl implements AIService {
             String url = zhipuBaseUrl + "/chat/completions";
             
             // 处理base64图片URL格式
-            // 如果已经是完整的数据URI格式，直接使用；否则添加前缀
+            // 前端FileReader.readAsDataURL返回的已经是完整的data URI格式
             String imageUrlValue = imageBase64;
-            if (!imageBase64.startsWith("data:")) {
-                // 判断图片类型
-                String prefix = "data:image/jpeg;base64,";
-                if (imageBase64.length() > 10) {
-                    // 根据base64开头判断图片类型
-                    String start = imageBase64.substring(0, 10);
-                    if (start.contains("PNG") || start.contains("png")) {
-                        prefix = "data:image/png;base64,";
-                    } else if (start.contains("GIF") || start.contains("gif")) {
-                        prefix = "data:image/gif;base64,";
-                    }
-                }
-                imageUrlValue = prefix + imageBase64;
+            if (!imageBase64.startsWith("data:image/")) {
+                // 如果不是data URI格式,需要添加前缀
+                log.warn("图片数据不是data URI格式,自动添加前缀");
+                imageUrlValue = "data:image/jpeg;base64," + imageBase64;
             }
+            
+            log.debug("最终图片URL格式: {}", imageUrlValue.length() > 50 ? imageUrlValue.substring(0, 50) + "..." : imageUrlValue);
             
             // 构建多模态请求体
             Map<String, Object> requestBodyMap = new HashMap<>();
@@ -357,7 +353,7 @@ public class AIServiceImpl implements AIService {
             Map<String, Object> imageContent = new HashMap<>();
             imageContent.put("type", "image_url");
             Map<String, String> imageUrl = new HashMap<>();
-            imageUrl.put("url", imageUrlValue); // 添加data URI前缀的base64图片
+            imageUrl.put("url", imageUrlValue);
             imageContent.put("image_url", imageUrl);
             contentList.add(imageContent);
             
