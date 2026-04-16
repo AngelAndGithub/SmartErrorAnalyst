@@ -370,7 +370,10 @@ public class AIServiceImpl implements AIService {
             
             // 转换为JSON
             String requestBody = objectMapper.writeValueAsString(requestBodyMap);
-            log.debug("智谱视觉API请求: {}", requestBody);
+            // 输出完整请求用于调试(限制长度)
+            String logRequest = requestBody.length() > 500 ? requestBody.substring(0, 500) + "..." : requestBody;
+            log.info("智谱视觉API请求: {}", logRequest);
+            log.debug("图片数据前100字符: {}", imageUrlValue.length() > 100 ? imageUrlValue.substring(0, 100) : imageUrlValue);
             
             // 构建HTTP请求
             Request request = new Request.Builder()
