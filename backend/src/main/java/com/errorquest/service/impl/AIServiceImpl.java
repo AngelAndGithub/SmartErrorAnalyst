@@ -325,8 +325,7 @@ public class AIServiceImpl implements AIService {
 
             String url = zhipuBaseUrl + "/chat/completions";
             
-            // 处理base64图片URL格式
-            // 智谱AI GLM-4V-Flash推荐使用纯base64字符串(不带data URI前缀)
+            // 处理base64图片URL格式 - 智谱AI需要使用完整的data URI格式
             String imageUrlValue = imageBase64;
             
             // 清理base64数据中的换行符和空格
@@ -335,13 +334,12 @@ public class AIServiceImpl implements AIService {
                 imageUrlValue = imageBase64.replaceAll("\\s+", "");
             }
             
-            // 如果是data URI格式,去掉前缀,只保留纯base64数据
-            if (imageUrlValue.startsWith("data:image/")) {
-                int commaIndex = imageUrlValue.indexOf(',');
-                if (commaIndex > 0 && commaIndex < imageUrlValue.length() - 1) {
-                    imageUrlValue = imageUrlValue.substring(commaIndex + 1);
-                    log.info("已移除data URI前缀,使用纯base64格式");
-                }
+            // 如果不是data URI格式,添加前缀
+            if (!imageUrlValue.startsWith("data:image/")) {
+                // 根据图片内容判断类型,默认使用png
+                String prefix = "data:image/png;base64,";
+                imageUrlValue = prefix + imageUrlValue;
+                log.info("已添加data URI前缀: {}", prefix);
             }
             
             log.info("图片数据长度: {}, 前80字符: {}", 
@@ -367,10 +365,12 @@ public class AIServiceImpl implements AIService {
             textContent.put("text", prompt != null ? prompt : "请识别图片中的文字内容，包括数学公式");
             contentList.add(textContent);
             
-            // 再添加图片 - 智谱AI视觉模型使用type:"image"而非"image_url"
+            // 再添加图片 - 使用标准的image_url格式
             Map<String, Object> imageContent = new LinkedHashMap<>();
-            imageContent.put("type", "image"); // 使用image而非image_url
-            imageContent.put("image", imageUrlValue); // 直接赋值base64,不使用url嵌套
+            imageContent.put("type", "image_url"); // 使用image_url
+            Map<String, String> imageUrl = new LinkedHashMap<>();
+            imageUrl.put("url", imageUrlValue); // data URI格式的base64
+            imageContent.put("image_url", imageUrl);
             contentList.add(imageContent);
             
             userMessage.put("content", contentList);
