@@ -43,21 +43,39 @@ public class FileController {
         }
 
         try {
+            // 将相对路径转换为绝对路径
+            String absoluteUploadPath = uploadPath;
+            if (uploadPath.startsWith(".")) {
+                // 相对路径转换为绝对路径
+                absoluteUploadPath = System.getProperty("user.dir") + File.separator + uploadPath.substring(1);
+            }
+            
             // 生成唯一文件名: 日期 + UUID + 扩展名
             String dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
             String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             String fileName = UUID.randomUUID().toString().replace("-", "") + extension;
             
             // 创建目录
-            String fullPath = uploadPath + File.separator + dateStr;
+            String fullPath = absoluteUploadPath + File.separator + dateStr;
             File directory = new File(fullPath);
             if (!directory.exists()) {
-                directory.mkdirs();
+                boolean created = directory.mkdirs();
+                if (!created) {
+                    log.error("创建目录失败: {}", fullPath);
+                    return Result.error("创建上传目录失败");
+                }
             }
 
             // 保存文件
             String filePath = fullPath + File.separator + fileName;
-            file.transferTo(new File(filePath));
+            File destFile = new File(filePath);
+            file.transferTo(destFile);
+            
+            // 验证文件是否成功保存
+            if (!destFile.exists()) {
+                log.error("文件保存失败: {}", filePath);
+                return Result.error("文件保存失败");
+            }
 
             // 构建访问URL
             String fileUrl = accessUrlPrefix + "/" + dateStr + "/" + fileName;
@@ -69,7 +87,7 @@ public class FileController {
             result.put("originalName", originalFilename);
             result.put("size", String.valueOf(file.getSize()));
 
-            log.info("文件上传成功: {}", fileUrl);
+            log.info("文件上传成功: {}, 保存路径: {}", fileUrl, filePath);
             return Result.success(result);
         } catch (IOException e) {
             log.error("文件上传失败", e);

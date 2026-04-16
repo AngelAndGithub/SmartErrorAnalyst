@@ -6,6 +6,8 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.io.File;
+
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -25,22 +27,24 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 配置文件上传路径映射
-        String os = System.getProperty("os.name").toLowerCase();
         String absolutePath;
         
         // 处理相对路径转换为绝对路径
         if (uploadPath.startsWith(".")) {
-            absolutePath = System.getProperty("user.dir") + uploadPath.substring(1);
+            absolutePath = System.getProperty("user.dir") + File.separator + uploadPath.substring(1);
         } else {
             absolutePath = uploadPath;
         }
         
-        // Windows路径需要特殊处理
-        if (os.contains("win")) {
-            absolutePath = absolutePath.replace("/", "\\");
+        // 确保路径以分隔符结尾
+        if (!absolutePath.endsWith(File.separator)) {
+            absolutePath += File.separator;
         }
         
+        // 转换为file:// URL格式
+        String resourceLocation = "file:" + absolutePath.replace("\\", "/");
+        
         registry.addResourceHandler("/api/files/**")
-                .addResourceLocations("file:" + absolutePath + "/");
+                .addResourceLocations(resourceLocation);
     }
 }
