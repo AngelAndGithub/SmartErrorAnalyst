@@ -38,6 +38,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .authorizeRequests()
                 .antMatchers("/api/auth/**").permitAll()
                 .antMatchers("/api/public/**").permitAll()
+                .antMatchers("/api/files/**").permitAll()  // 允许文件上传和访问
+                .antMatchers("/api/image/**").permitAll()  // 允许图片识别
                 .anyRequest().authenticated()
             .and()
             .formLogin().disable()
